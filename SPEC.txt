@@ -77,3 +77,4 @@ fx20        BUZ  Rx         play tone for Rx ticks
 
 OTHER
 labels can be defined in MercuryASM as 'label_name:'
+raw bytes can be defined in MercuryASM with the 'RAW' command
