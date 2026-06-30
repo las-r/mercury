@@ -25,6 +25,7 @@ fx0f        RNG  Rx         Rx = random byte
 3x00        RET  Rx         PC = pop(STK) + Rx
 exyz        JMP  RxRy+Rz    PC = RxRy + Rz
 4x1f        JPR  Rx         PC = PC + Rx
+4x2f        JNR  Rx         PC = PC - Rx
 
 -- SKIP --
 4x00        SKZ  Rx         skip next if Rx == 0
@@ -73,3 +74,6 @@ ff05        RTT             resume TIMER
 
 -- SOUND --
 fx20        BUZ  Rx         play tone for Rx ticks
+
+OTHER
+labels can be defined in MercuryASM as 'label_name:'

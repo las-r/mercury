@@ -72,6 +72,8 @@ class Processor:
                 self.pc = (rxry + rz) & 0xffff
             case (4, _, 1, 15):
                 self.pc = (self.pc + rx) & 0xffff
+            case (4, _, 2, 15):
+                self.pc = (self.pc - rx) & 0xffff
 
             # skip
             case (4, _, 0, 0):
