@@ -1,0 +1,75 @@
+MERCURY
+a fantasy console inspired by chip8
+
+SPECS
+  memory:   64kb
+  registers: 16 byte-sized (R0-RF; R0 = zero register, RF = flag register)
+  pointers:  PC starts at 0x80; I starts at 0x00
+  font:      0x0000-0x007F
+  program data:  0x080+
+  display:   128×64, 16 color (4 planes)
+  input:     4×4 hex keypad (0-F)
+
+INSTRUCTIONS
+
+-- MISC --
+0000        NOP
+00dd        CLR         clear screen
+00de        CLP         clear only selected planes
+00ee        END         fully halt the program
+fx0f        RNG  Rx         Rx = random byte
+
+-- CONTROL FLOW --
+1xyz        LDI  Rx, yz     Rx = yz (load immediate)
+2xyz        CALL RxRy+Rz    push PC; PC = RxRy + Rz
+3x00        RET  Rx         PC = pop(STK) + Rx
+exyz        JMP  RxRy+Rz    PC = RxRy + Rz
+4x1f        JPR  Rx         PC = PC + Rx
+
+-- SKIP --
+4x00        SKZ  Rx         skip next if Rx == 0
+7xy0        SKE  Rx, Ry     skip next if Rx == Ry; skip+1 if Rx > Ry
+7xy1        SKNE Rx, Ry     skip next if Rx != Ry; skip+1 if Rx < Ry
+
+-- ALU --
+7xyf        NOT  Rx, Ry        Rx = ~Ry;       RF = 0
+8xyz        AND  Rx, Ry, Rz    Rx = Ry & Rz;  RF = 0
+9xyz        OR   Rx, Ry, Rz    Rx = Ry | Rz;  RF = 0
+axyz        XOR  Rx, Ry, Rz    Rx = Ry ^ Rz;  RF = 0
+bxyz        ADD  Rx, Ry, Rz    Rx = Ry + Rz;  RF = 1 if overflow
+cxyz        SUB  Rx, Ry, Rz    Rx = Ry - Rz;  RF = 1 if underflow
+fxe0        SHL  Rx            Rx = Rx << 1;   RF = shifted-out bit
+fxf0       SHR  Rx            Rx = Rx >> 1;   RF = shifted-out bit
+
+-- MEMORY & I --
+5x00        STM  Rx         RAM[I] = Rx
+5x01        LDM  Rx         Rx = RAM[I]
+5x10        STI  Rx         I = Rx
+5x11        ADI  Rx         I = I + Rx
+5x12        SBI  Rx         I = I - Rx
+
+-- KEY INPUT --
+6x00        WKEY Rx         wait until any key down; store key index in Rx
+6x10        WKD  z          wait until key z is down     (literal)
+6x11        SKD  z          skip next if key z is down   (literal)
+6x12        WKU  z          wait until key z is up       (literal)
+6x20        WKDR Rz         wait until key Rz is down    (register)
+6x21        SKDR Rz         skip next if key Rz is down  (register)
+6x22        WKUR Rz         wait until key Rz is up      (register)
+
+-- DISPLAY --
+dxyz        DRW  Rx, Ry, z    draw Rz rows tall sprite at RAM[I] at (Rx, Ry)
+fx30        PLN  x             set drawing planes to x (bitmask)
+
+-- FONT --
+fx00        FNT  Rx         I = Rx * 5 (point I at font glyph for Rx)
+
+-- TIMER --
+fx01        STT  Rx         TIMER = Rx
+fx02        GTT  Rx         Rx = TIMER
+fx03        WTT             stall until TIMER == 0
+ff04        PTT             pause TIMER
+ff05        RTT             resume TIMER
+
+-- SOUND --
+fx20        BUZ  Rx         play tone for Rx ticks
