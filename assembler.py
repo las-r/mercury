@@ -127,13 +127,13 @@ class MercuryAssembler:
                 elif mnemonic == "WKEY":
                     rx = self.parse_reg(args[0])
                     opcode = 0x6000 | (rx << 8)
-                elif mnemonic in ("WKD", "SKD", "WKU"):
+                elif mnemonic in ("WKD", "SKD", "WKU", "SKU"):
                     z = self.parse_int(args[0]) & 0xF
-                    suffix = {"WKD": 0x10, "SKD": 0x11, "WKU": 0x12}[mnemonic]
+                    suffix = {"WKD": 0x10, "SKD": 0x11, "WKU": 0x12, "SKU": 0x23}[mnemonic]
                     opcode = 0x6000 | (z << 8) | suffix
-                elif mnemonic in ("WKDR", "SKDR", "WKUR"):
+                elif mnemonic in ("WKDR", "SKDR", "WKUR", "SKUR"):
                     rz = self.parse_reg(args[0])
-                    suffix = {"WKDR": 0x20, "SKDR": 0x21, "WKUR": 0x22}[mnemonic]
+                    suffix = {"WKDR": 0x20, "SKDR": 0x21, "WKUR": 0x22, "SKUR": 0x23}[mnemonic]
                     opcode = 0x6000 | (rz << 8) | suffix
                 elif mnemonic == "DRW":
                     rx = self.parse_reg(args[0])

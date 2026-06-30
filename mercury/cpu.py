@@ -148,6 +148,9 @@ class Processor:
             case (6, _, 1, 2):
                 if self.disp.key_down(z):
                     self.pc -= 2
+            case (6, _, 1, 3):
+                if not self.disp.key_down(z):
+                    self.pc += 2
             case (6, _, 2, 0):
                 if not self.disp.key_down(rz):
                     self.pc -= 2
@@ -157,6 +160,9 @@ class Processor:
             case (6, _, 2, 2):
                 if self.disp.key_down(rz):
                     self.pc -= 2
+            case (6, _, 2, 3):
+                if not self.disp.key_down(rz):
+                    self.pc += 2
 
             # display
             case (13, _, _, _):

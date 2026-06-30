@@ -54,9 +54,11 @@ fxf0       SHR  Rx            Rx = Rx >> 1;   RF = shifted-out bit
 6x10        WKD  z          wait until key z is down     (literal)
 6x11        SKD  z          skip next if key z is down   (literal)
 6x12        WKU  z          wait until key z is up       (literal)
+6x13        SKU  z          skip next if key z is up   (literal)
 6x20        WKDR Rz         wait until key Rz is down    (register)
 6x21        SKDR Rz         skip next if key Rz is down  (register)
 6x22        WKUR Rz         wait until key Rz is up      (register)
+6x23        SKDU Rz         skip next if key Rz is UP  (register)
 
 -- DISPLAY --
 dxyz        DRW  Rx, Ry, z    draw Rz rows tall sprite at RAM[I] at (Rx, Ry)
