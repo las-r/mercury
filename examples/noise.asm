@@ -14,19 +14,19 @@ LDI R8 127
 LDI R9 22     
 
 ; main blast loop
-    RNG R2        ; [PC here] 1
-    AND R2 R2 R8   ; 2
+    RNG R2 ; [PC here] 1
+    AND R2 R2 R8 ; 2
 
-    RNG R3        ; 3
-    AND R3 R3 R7   ; 4
+    RNG R3 ; 3
+    AND R3 R3 R7 ; 4
 
-    RNG R4        ; 5
-    AND R4 R4 R6   ; 6
+    RNG R4 ; 5
+    AND R4 R4 R6 ; 6
 
-    FNT R4        ; 7
-    DRW R2 R3 5   ; 8
+    FNT R4 ; 7
+    DRW R2 R3 5 ; 8
 
     SKU 0xd
     CLR
 
-JNR R9            ; Loops back to first RNG
+JNR R9 ; Loops back to first RNG
