@@ -7,28 +7,44 @@ import sys
 class MercuryAssembler:
     def __init__(self):
         self.labels = {}
+        self.aliases = {}      # Stores alias_name -> register_string (e.g., 'ptr' -> 'r2')
+        self.constants = {}    # Stores value_name -> integer_value (e.g., 'max_limit' -> 10)
         self.instructions = []
         
     def parse_reg(self, token):
+        token_str = token.strip(',')
+        # Check if the token is a registered alias first
+        if token_str in self.aliases:
+            token_str = self.aliases[token_str]
+            
         # parses register strings like r0-rf to an integer 0-15
-        match = re.match(r'^[rR]([0-9a-fA-F])$', token.strip(','))
+        match = re.match(r'^[rR]([0-9a-fA-F])$', token_str)
         if not match:
             raise ValueError(f"invalid register: {token}")
         return int(match.group(1), 16)
 
     def parse_int(self, token):
+        token_str = token.strip(',')
+        # Check if the token is a defined constant first
+        if token_str in self.constants:
+            return self.constants[token_str]
+            
         # parses integer tokens (hex like 0x12 or decimal like 18)
-        token = token.strip(',')
-        if token.lower().startswith('0x'):
-            return int(token, 16)
-        return int(token)
+        if token_str.lower().startswith('0x'):
+            return int(token_str, 16)
+        return int(token_str)
 
     def first_pass(self, lines):
-        # first pass to clean up lines and extract label positions
+        # first pass to clean up lines, record definitions, and extract label positions
         cleaned_lines = []
         current_address = 0x80  # program data starts at 0x80
         
-        for line in lines:
+        # Reset tables on every assembly run
+        self.labels.clear()
+        self.aliases.clear()
+        self.constants.clear()
+        
+        for line_num, line in enumerate(lines, 1):
             # strip comments and whitespace
             line = re.sub(r'[;#].*$', '', line).strip()
             if not line:
@@ -40,6 +56,32 @@ class MercuryAssembler:
                 if label_name in self.labels:
                     raise SyntaxError(f"duplicate label: {label_name}")
                 self.labels[label_name] = current_address
+                continue
+            
+            # Split line into raw parts to check for directives
+            tokens = line.replace(',', ' ').split()
+            directive = tokens[0].upper()
+            
+            # --- Handle ALI (Registry Alias) Directive ---
+            if directive == "ALI":
+                if len(tokens) != 3:
+                    raise SyntaxError(f"Line {line_num}: ALI directive requires exactly 2 arguments (alias, register)")
+                alias_name = tokens[1]
+                target_reg = tokens[2]
+                self.aliases[alias_name] = target_reg
+                continue
+                
+            # --- Handle CON (Constant Value) Directive ---
+            elif directive == "CON":
+                if len(tokens) != 3:
+                    raise SyntaxError(f"Line {line_num}: CON directive requires exactly 2 arguments (name, value)")
+                const_name = tokens[1]
+                try:
+                    # Evaluate standard numbers/hex integers directly
+                    const_value = int(tokens[2], 16) if tokens[2].lower().startswith('0x') else int(tokens[2])
+                except ValueError:
+                    raise SyntaxError(f"Line {line_num}: Constant value must be a valid integer.")
+                self.constants[const_name] = const_value
                 continue
                 
             cleaned_lines.append((current_address, line))
@@ -84,7 +126,16 @@ class MercuryAssembler:
                     val = self.labels[args[1]] if args[1] in self.labels else self.parse_int(args[1])
                     opcode = 0x1000 | (rx << 8) | (val & 0xFF)
                 elif mnemonic in ("CALL", "JMP"):
-                    joined = "".join(args).replace('+', ' ').replace('R', ' R').replace('r', ' r')
+                    # Pre-process arguments to swap aliases before the custom parser math splits them up
+                    processed_args = []
+                    for arg in args:
+                        # Normalize string out of potential symbols
+                        clean_arg = arg.replace('+', '').strip()
+                        if clean_arg in self.aliases:
+                            arg = arg.replace(clean_arg, self.aliases[clean_arg])
+                        processed_args.append(arg)
+
+                    joined = "".join(processed_args).replace('+', ' ').replace('R', ' R').replace('r', ' r')
                     sub_tokens = joined.split()
                     rx = self.parse_reg(sub_tokens[0])
                     ry = self.parse_reg(sub_tokens[1])
@@ -179,20 +230,17 @@ class MercuryAssembler:
 
 # cli setup
 if __name__ == "__main__":
-    # arguments
     if len(sys.argv) < 3:
         print(f"usage: python {sys.argv[0]} <input_src_file> <output_bin_file>")
         sys.exit(1)
     src_filename = sys.argv[1]
     bin_filename = sys.argv[2]
     
-    # assemble
     with open(src_filename, "r") as f:
         code = f.read()
     assembler = MercuryAssembler()
     binary = assembler.assemble(code)
     
-    # write
     with open(bin_filename, "wb") as f_out:
         f_out.write(binary)
     
