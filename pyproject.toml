@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mercury-emu"
+version = "0.1.0"
+description = "A fantasy console loosely inspired by CHIP-8."
+authors = [{ name = "las-r" }]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "raylib",
+]
+
+[project.scripts]
+mercury = "mercury.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["mercury*"]
