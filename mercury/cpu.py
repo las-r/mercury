@@ -70,28 +70,29 @@ class Processor:
                 self.pc = (self.stk.pop() + rx) & 0xffff
             case (14, _, _, _):
                 self.pc = (rxry + rz) & 0xffff
-            case (4, _, 1, 15):
+            case (4, _, 0, 14):
                 self.pc = (self.pc + rx) & 0xffff
-            case (4, _, 2, 15):
+            case (4, _, 0, 15):
                 self.pc = (self.pc - rx) & 0xffff
 
-            # skip
-            case (4, _, 0, 0):
-                if rx == 0:
-                    self.pc += 2
-            case (7, _, _, 0):
+            # skip (always skips exactly one instruction)
+            case (4, _, _, 0):
                 if rx == ry:
                     self.pc += 2
-                    if rx > ry:
-                        self.pc += 2
-            case (7, _, _, 1):
+            case (4, _, _, 1):
                 if rx != ry:
                     self.pc += 2
-                    if rx < ry:
-                        self.pc += 2
+            case (4, _, _, 2):
+                if rx > ry:
+                    self.pc += 2
+            case (4, _, _, 3):
+                if rx < ry:
+                    self.pc += 2
 
             # alu
-            case (7, _, _, 15):
+            case (7, _, _, 0):
+                self.r[x] = ry
+            case (7, _, _, 1):
                 self.r[x] = (~ry) & 0xff
                 self.r[0xf] = 0
             case (8, _, _, _):
@@ -140,27 +141,15 @@ class Processor:
                 else:
                     self.r[x] = key
             case (6, _, 1, 0):
-                if not self.disp.key_down(z):
-                    self.pc -= 2
-            case (6, _, 1, 1):
-                if self.disp.key_down(z):
-                    self.pc += 2
-            case (6, _, 1, 2):
-                if self.disp.key_down(z):
-                    self.pc -= 2
-            case (6, _, 1, 3):
-                if not self.disp.key_down(z):
-                    self.pc += 2
-            case (6, _, 2, 0):
                 if not self.disp.key_down(rz):
                     self.pc -= 2
-            case (6, _, 2, 1):
+            case (6, _, 1, 1):
                 if self.disp.key_down(rz):
                     self.pc += 2
-            case (6, _, 2, 2):
+            case (6, _, 1, 2):
                 if self.disp.key_down(rz):
                     self.pc -= 2
-            case (6, _, 2, 3):
+            case (6, _, 1, 3):
                 if not self.disp.key_down(rz):
                     self.pc += 2
 
@@ -169,7 +158,7 @@ class Processor:
                 sprite = [int(self.ram[self.i + row]) for row in range(z)]
                 self.r[0xf] = self.disp.draw_sprite(rx, ry, sprite)
             case (15, _, 3, 0):
-                self.disp.plane = np.uint8(x)
+                self.disp.plane = np.uint8(x & 0x7)
 
             # font
             case (15, _, 0, 0):
@@ -194,3 +183,6 @@ class Processor:
 
             case _:
                 pass
+
+        # R0 is hardwired to zero, so any write above is discarded here
+        self.r[0] = 0

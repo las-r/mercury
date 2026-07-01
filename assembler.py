@@ -101,7 +101,8 @@ class MercuryAssembler:
             
             try:
                 opcode = 0
-                
+
+                # --- misc ---
                 if mnemonic == "NOP":
                     opcode = 0x0000
                 elif mnemonic == "RAW":
@@ -121,6 +122,8 @@ class MercuryAssembler:
                 elif mnemonic == "RNG":
                     rx = self.parse_reg(args[0])
                     opcode = 0xF00F | (rx << 8)
+
+                # --- control flow ---
                 elif mnemonic == "LDI":
                     rx = self.parse_reg(args[0])
                     val = self.labels[args[1]] if args[1] in self.labels else self.parse_int(args[1])
@@ -147,17 +150,23 @@ class MercuryAssembler:
                     opcode = 0x3000 | (rx << 8)
                 elif mnemonic == "JPR":
                     rx = self.parse_reg(args[0])
-                    opcode = 0x401F | (rx << 8)
+                    opcode = 0x400E | (rx << 8)
                 elif mnemonic == "JNR":
                     rx = self.parse_reg(args[0])
-                    opcode = 0x402F | (rx << 8)
-                elif mnemonic == "SKZ":
-                    rx = self.parse_reg(args[0])
-                    opcode = 0x4000 | (rx << 8)
-                elif mnemonic in ("SKE", "SKNE", "NOT"):
+                    opcode = 0x400F | (rx << 8)
+
+                # --- skip (single-skip only, no more of the old skip+1 weirdness) ---
+                elif mnemonic in ("SKE", "SKNE", "SKGT", "SKLT"):
                     rx = self.parse_reg(args[0])
                     ry = self.parse_reg(args[1])
-                    suffix = 0x0 if mnemonic == "SKE" else (0x1 if mnemonic == "SKNE" else 0xF)
+                    suffix = {"SKE": 0x0, "SKNE": 0x1, "SKGT": 0x2, "SKLT": 0x3}[mnemonic]
+                    opcode = 0x4000 | (rx << 8) | (ry << 4) | suffix
+
+                # --- alu ---
+                elif mnemonic in ("MOV", "NOT"):
+                    rx = self.parse_reg(args[0])
+                    ry = self.parse_reg(args[1])
+                    suffix = 0x0 if mnemonic == "MOV" else 0x1
                     opcode = 0x7000 | (rx << 8) | (ry << 4) | suffix
                 elif mnemonic in ("AND", "OR", "XOR", "ADD", "SUB"):
                     rx = self.parse_reg(args[0])
@@ -171,32 +180,38 @@ class MercuryAssembler:
                 elif mnemonic == "SHR":
                     rx = self.parse_reg(args[0])
                     opcode = 0xF0F0 | (rx << 8)
+
+                # --- memory & I ---
                 elif mnemonic in ("STM", "LDM", "STI", "ADI", "SBI"):
                     rx = self.parse_reg(args[0])
                     suffix = {"STM": 0x00, "LDM": 0x01, "STI": 0x10, "ADI": 0x11, "SBI": 0x12}[mnemonic]
                     opcode = 0x5000 | (rx << 8) | suffix
+
+                # --- key input ---
                 elif mnemonic == "WKEY":
                     rx = self.parse_reg(args[0])
                     opcode = 0x6000 | (rx << 8)
-                elif mnemonic in ("WKD", "SKD", "WKU", "SKU"):
-                    z = self.parse_int(args[0]) & 0xF
-                    suffix = {"WKD": 0x10, "SKD": 0x11, "WKU": 0x12, "SKU": 0x23}[mnemonic]
-                    opcode = 0x6000 | (z << 8) | suffix
                 elif mnemonic in ("WKDR", "SKDR", "WKUR", "SKUR"):
                     rz = self.parse_reg(args[0])
-                    suffix = {"WKDR": 0x20, "SKDR": 0x21, "WKUR": 0x22, "SKUR": 0x23}[mnemonic]
+                    suffix = {"WKDR": 0x10, "SKDR": 0x11, "WKUR": 0x12, "SKUR": 0x13}[mnemonic]
                     opcode = 0x6000 | (rz << 8) | suffix
+
+                # --- display ---
                 elif mnemonic == "DRW":
                     rx = self.parse_reg(args[0])
                     ry = self.parse_reg(args[1])
                     z = self.parse_int(args[2]) & 0xF
                     opcode = 0xD000 | (rx << 8) | (ry << 4) | z
                 elif mnemonic == "PLN":
-                    x = self.parse_int(args[0]) & 0xF
+                    x = self.parse_int(args[0]) & 0x7
                     opcode = 0xF030 | (x << 8)
+
+                # --- font ---
                 elif mnemonic == "FNT":
                     rx = self.parse_reg(args[0])
                     opcode = 0xF000 | (rx << 8)
+
+                # --- timer ---
                 elif mnemonic in ("STT", "GTT"):
                     rx = self.parse_reg(args[0])
                     suffix = 0x01 if mnemonic == "STT" else 0x02
@@ -207,6 +222,8 @@ class MercuryAssembler:
                     opcode = 0xFF04
                 elif mnemonic == "RTT":
                     opcode = 0xFF05
+
+                # --- sound ---
                 elif mnemonic == "BUZ":
                     rx = self.parse_reg(args[0])
                     opcode = 0xF020 | (rx << 8)

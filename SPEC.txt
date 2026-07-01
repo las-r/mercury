@@ -3,44 +3,51 @@ a fantasy console inspired by chip8
 
 SPECS
   memory:   64kb
-  registers: 16 byte-sized (R0-RF; R0 = zero register, RF = flag register)
+  registers: 16 byte-sized (R0-RF; R0 = zero register RF = flag register)
   pointers:  PC starts at 0x80; I starts at 0x00
   font:      0x0000-0x007F
   program data:  0x080+
-  display:   128×64, 16 color (4 planes)
+  display:   128×64 8 color (3 planes direct RGB: bit0=R bit1=G bit2=B)
   input:     4×4 hex keypad (0-F)
+
+NOTE: R0 is hardwired to 0. any instruction that writes to R0 is discarded
+after execution so "MOV Rx R0" always zeroes Rx and "SKE Rx R0" always
+checks Rx against zero.
 
 INSTRUCTIONS
 
 -- MISC --
 0000        NOP
-00dd        CLR         clear screen
+00dd        CLR         clear screen (all planes)
 00de        CLP         clear only selected planes
 00ee        END         fully halt the program
 fx0f        RNG  Rx         Rx = random byte
 
 -- CONTROL FLOW --
-1xyz        LDI  Rx, yz     Rx = yz (load immediate)
+1xyz        LDI  Rx yz     Rx = yz (load immediate)
 2xyz        CALL RxRy+Rz    push PC; PC = RxRy + Rz
 3x00        RET  Rx         PC = pop(STK) + Rx
 exyz        JMP  RxRy+Rz    PC = RxRy + Rz
-4x1f        JPR  Rx         PC = PC + Rx
-4x2f        JNR  Rx         PC = PC - Rx
+4x0e        JPR  Rx         PC = PC + Rx
+4x0f        JNR  Rx         PC = PC - Rx
 
 -- SKIP --
-4x00        SKZ  Rx         skip next if Rx == 0
-7xy0        SKE  Rx, Ry     skip next if Rx == Ry; skip+1 if Rx > Ry
-7xy1        SKNE Rx, Ry     skip next if Rx != Ry; skip+1 if Rx < Ry
+(all skip instructions skip exactly one instruction when the condition holds)
+4xy0        SKE  Rx Ry     skip next if Rx == Ry
+4xy1        SKNE Rx Ry     skip next if Rx != Ry
+4xy2        SKGT Rx Ry     skip next if Rx > Ry
+4xy3        SKLT Rx Ry     skip next if Rx < Ry
 
 -- ALU --
-7xyf        NOT  Rx, Ry        Rx = ~Ry;       RF = 0
-8xyz        AND  Rx, Ry, Rz    Rx = Ry & Rz;  RF = 0
-9xyz        OR   Rx, Ry, Rz    Rx = Ry | Rz;  RF = 0
-axyz        XOR  Rx, Ry, Rz    Rx = Ry ^ Rz;  RF = 0
-bxyz        ADD  Rx, Ry, Rz    Rx = Ry + Rz;  RF = 1 if overflow
-cxyz        SUB  Rx, Ry, Rz    Rx = Ry - Rz;  RF = 1 if underflow
-fxe0        SHL  Rx            Rx = Rx << 1;   RF = shifted-out bit
-fxf0       SHR  Rx            Rx = Rx >> 1;   RF = shifted-out bit
+7xy0        MOV  Rx Ry         Rx = Ry
+7xy1        NOT  Rx Ry         Rx = ~Ry;      RF = 0
+8xyz        AND  Rx Ry Rz      Rx = Ry & Rz;  RF = 0
+9xyz        OR   Rx Ry Rz      Rx = Ry | Rz;  RF = 0
+axyz        XOR  Rx Ry Rz      Rx = Ry ^ Rz;  RF = 0
+bxyz        ADD  Rx Ry Rz      Rx = Ry + Rz;  RF = 1 if overflow
+cxyz        SUB  Rx Ry Rz      Rx = Ry - Rz;  RF = 1 if underflow
+fxe0        SHL  Rx            Rx = Rx << 1;  RF = shifted-out bit
+fxf0        SHR  Rx            Rx = Rx >> 1;  RF = shifted-out bit
 
 -- MEMORY & I --
 5x00        STM  Rx         RAM[I] = Rx
@@ -51,18 +58,14 @@ fxf0       SHR  Rx            Rx = Rx >> 1;   RF = shifted-out bit
 
 -- KEY INPUT --
 6x00        WKEY Rx         wait until any key down; store key index in Rx
-6x10        WKD  z          wait until key z is down     (literal)
-6x11        SKD  z          skip next if key z is down   (literal)
-6x12        WKU  z          wait until key z is up       (literal)
-6x13        SKU  z          skip next if key z is up   (literal)
-6x20        WKDR Rz         wait until key Rz is down    (register)
-6x21        SKDR Rz         skip next if key Rz is down  (register)
-6x22        WKUR Rz         wait until key Rz is up      (register)
-6x23        SKDU Rz         skip next if key Rz is UP  (register)
+6x10        WKDR Rz         wait until key Rz is down
+6x11        SKDR Rz         skip next if key Rz is down
+6x12        WKUR Rz         wait until key Rz is up
+6x13        SKUR Rz         skip next if key Rz is up
 
 -- DISPLAY --
-dxyz        DRW  Rx, Ry, z    draw Rz rows tall sprite at RAM[I] at (Rx, Ry)
-fx30        PLN  x             set drawing planes to x (bitmask)
+dxyz        DRW  Rx Ry z    draw z rows tall sprite at RAM[I] at (Rx Ry)
+fx30        PLN  x            set drawing planes to x (bitmask bit0=R bit1=G bit2=B)
 
 -- FONT --
 fx00        FNT  Rx         I = Rx * 5 (point I at font glyph for Rx)
@@ -80,3 +83,5 @@ fx20        BUZ  Rx         play tone for Rx ticks
 OTHER
 labels can be defined in MercuryASM as 'label_name:'
 raw bytes can be defined in MercuryASM with the 'RAW' command
+constants can be defined with 'CON name value' and used anywhere a number is expected
+register aliases can be defined with 'ALI name Rx' and used anywhere a register is expected

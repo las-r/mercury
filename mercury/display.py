@@ -1,26 +1,6 @@
 import numpy as np
 import pyray as rl
 
-# color palette
-PALETTE = np.array([
-    0x00_00_00_ff, # 0b0000: Black
-    0x00_00_00_ff, # 0b0001: Black
-    0x00_00_7f_ff, # 0b0010: Blue (Low)
-    0x00_00_ff_ff, # 0b0011: Blue (High)
-    0x00_7f_00_ff, # 0b0100: Green (Low)
-    0x00_ff_00_ff, # 0b0101: Green (High)
-    0x00_7f_7f_ff, # 0b0110: Cyan (Low)
-    0x00_ff_ff_ff, # 0b0111: Cyan (High)
-    0x7f_00_00_ff, # 0b1000: Red (Low)
-    0xff_00_00_ff, # 0b1001: Red (High)
-    0x7f_00_7f_ff, # 0b1010: Magenta (Low)
-    0xff_00_ff_ff, # 0b1011: Magenta (High)
-    0x7f_7f_00_ff, # 0b1100: Yellow (Low)
-    0xff_ff_00_ff, # 0b1101: Yellow (High)
-    0x7f_7f_7f_ff, # 0b1110: Gray (Low)
-    0xff_ff_ff_ff, # 0b1111: White (High)
-], dtype=np.uint32)
-
 # keypad layout
 KEYMAP = {
     0x1: rl.KeyboardKey.KEY_ONE, 0x2: rl.KeyboardKey.KEY_TWO, 0x3: rl.KeyboardKey.KEY_THREE, 0xC: rl.KeyboardKey.KEY_FOUR,
@@ -32,8 +12,8 @@ KEYMAP = {
 # display class
 class Display:
     def __init__(self):
-        self.grids = [np.zeros((64, 128), dtype=np.uint8) for _ in range(4)]
-        self.plane = np.uint8(0xf)
+        self.grids = [np.zeros((64, 128), dtype=np.uint8) for _ in range(3)]
+        self.plane = np.uint8(0x7)
         self.rscale = 5
         
         # init window
@@ -56,7 +36,7 @@ class Display:
             grid.fill(0)
         
     def clear(self):
-        for bit in range(4):
+        for bit in range(3):
             if (self.plane >> bit) & 1:
                 self.grids[bit].fill(0)
                 
@@ -64,7 +44,7 @@ class Display:
         x = int(x) % 128
         y = int(y) % 64
         collision = 0
-        for bit in range(4):
+        for bit in range(3):
             if not (self.plane >> bit) & 1:
                 continue
             grid = self.grids[bit]
@@ -80,12 +60,15 @@ class Display:
         return collision
 
     def render(self):
-        active_masks = np.unpackbits(np.uint8(self.plane) << 4, count=4)
-        color_indices = np.zeros((64, 128), dtype=np.uint8)
-        for i in range(4):
-            if active_masks[i]:
-                color_indices |= (np.clip(self.grids[i], 0, 1) << i)
-        self.screen_buffer[:, :] = PALETTE[color_indices]
+        r = self.grids[0].astype(np.uint32) * 0xff
+        g = self.grids[1].astype(np.uint32) * 0xff
+        b = self.grids[2].astype(np.uint32) * 0xff
+        self.screen_buffer[:, :] = (
+            (0xff << 24) |
+            (b << 16) |
+            (g << 8) |
+            r
+        )
         pixel_ptr = rl.ffi.cast('void *', rl.ffi.from_buffer(self.screen_buffer))
         rl.update_texture(self.texture, pixel_ptr)
         rl.begin_drawing()
