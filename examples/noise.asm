@@ -1,16 +1,17 @@
 ; font noise
 ; by las-r
 
-PLN 15
+PLN 7
 
 ; constants
 LDI R1 1
 LDI R6 15
 LDI R7 63
 LDI R8 127
+LDI Rc 0xd  ; hold key = clear
 
 ; loop back offset
-; 8 instructions to jump back: (8 * 2) + 2 = 18 bytes
+; 11 instructions to jump back: 11 * 2 = 22 bytes
 LDI R9 22     
 
 ; main blast loop
@@ -26,7 +27,7 @@ LDI R9 22
     FNT R4 ; 7
     DRW R2 R3 5 ; 8
 
-    SKU 0xd
-    CLR
+    SKUR Rc ; 9
+    CLR ; 10
 
-JNR R9 ; Loops back to first RNG
+JNR R9 ; 11, loops back to first RNG
