@@ -112,6 +112,6 @@ def convert_image(in_path: str, out_path: str):
 # main
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("usage: python script.py <input_image> <output_asm>")
+        print(f"usage: python {__file__} <input_image> <output_asm>")
         sys.exit(1)
     convert_image(sys.argv[1], sys.argv[2])
