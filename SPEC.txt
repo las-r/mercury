@@ -16,72 +16,71 @@ checks Rx against zero.
 
 INSTRUCTIONS
 
--- MISC --
+-- misc --
 0000        NOP
-00dd        CLR         clear screen (all planes)
-00de        CLP         clear only selected planes
-00ee        END         fully halt the program
+00dd        CLR             clear screen (all planes)
+00de        CLP             clear only selected planes
+00ee        END             fully halt the program
 fx0f        RNG  Rx         Rx = random byte
 
--- CONTROL FLOW --
-1xyz        LDI  Rx yz     Rx = yz (load immediate)
+-- control flow --
+1xyz        LDI  Rx yz      Rx = yz (load immediate)
 2xyz        CALL RxRy+Rz    push PC; PC = RxRy + Rz
 3x00        RET  Rx         PC = pop(STK) + Rx
 exyz        JMP  RxRy+Rz    PC = RxRy + Rz
 4x0e        JPR  Rx         PC = PC + Rx
 4x0f        JNR  Rx         PC = PC - Rx
 
--- SKIP --
-(all skip instructions skip exactly one instruction when the condition holds)
-4xy0        SKE  Rx Ry     skip next if Rx == Ry
-4xy1        SKNE Rx Ry     skip next if Rx != Ry
-4xy2        SKGT Rx Ry     skip next if Rx > Ry
-4xy3        SKLT Rx Ry     skip next if Rx < Ry
+-- skip --
+4xy0        SKE  Rx Ry      skip next if Rx == Ry
+4xy1        SKNE Rx Ry      skip next if Rx != Ry
+4xy2        SKGT Rx Ry      skip next if Rx > Ry
+4xy3        SKLT Rx Ry      skip next if Rx < Ry
 
--- ALU --
-7xy0        MOV  Rx Ry         Rx = Ry
-7xy1        NOT  Rx Ry         Rx = ~Ry;      RF = 0
-8xyz        AND  Rx Ry Rz      Rx = Ry & Rz;  RF = 0
-9xyz        OR   Rx Ry Rz      Rx = Ry | Rz;  RF = 0
-axyz        XOR  Rx Ry Rz      Rx = Ry ^ Rz;  RF = 0
-bxyz        ADD  Rx Ry Rz      Rx = Ry + Rz;  RF = 1 if overflow
-cxyz        SUB  Rx Ry Rz      Rx = Ry - Rz;  RF = 1 if underflow
-fxe0        SHL  Rx            Rx = Rx << 1;  RF = shifted-out bit
-fxf0        SHR  Rx            Rx = Rx >> 1;  RF = shifted-out bit
+-- alu --
+7xy0        MOV  Rx Ry      Rx = Ry
+7xy1        NOT  Rx Ry      Rx = ~Ry;     RF = 0
+8xyz        AND  Rx Ry Rz   Rx = Ry & Rz; RF = 0
+9xyz        OR   Rx Ry Rz   Rx = Ry | Rz; RF = 0
+axyz        XOR  Rx Ry Rz   Rx = Ry ^ Rz; RF = 0
+bxyz        ADD  Rx Ry Rz   Rx = Ry + Rz; RF = 1 if overflow
+cxyz        SUB  Rx Ry Rz   Rx = Ry - Rz; RF = 1 if underflow
+fxe0        SHL  Rx         Rx = Rx << 1; RF = shifted-out bit
+fxf0        SHR  Rx         Rx = Rx >> 1; RF = shifted-out bit
 
--- MEMORY & I --
+-- memory & i --
 5x00        STM  Rx         RAM[I] = Rx
 5x01        LDM  Rx         Rx = RAM[I]
 5x10        STI  Rx         I = Rx
 5x11        ADI  Rx         I = I + Rx
 5x12        SBI  Rx         I = I - Rx
 
--- KEY INPUT --
+-- keypad input --
 6x00        WKEY Rx         wait until any key down; store key index in Rx
 6x10        WKDR Rz         wait until key Rz is down
 6x11        SKDR Rz         skip next if key Rz is down
 6x12        WKUR Rz         wait until key Rz is up
 6x13        SKUR Rz         skip next if key Rz is up
 
--- DISPLAY --
+-- display --
 dxyz        DRW  Rx Ry z    draw z rows tall sprite at RAM[I] at (Rx Ry)
-fx30        PLN  x            set drawing planes to x (bitmask bit0=R bit1=G bit2=B)
+fx30        PLN  x          set drawing planes to x (bitmask bit0=R bit1=G bit2=B)
 
--- FONT --
+-- font --
 fx00        FNT  Rx         I = Rx * 5 (point I at font glyph for Rx)
 
--- TIMER --
+-- timer --
 fx01        STT  Rx         TIMER = Rx
 fx02        GTT  Rx         Rx = TIMER
 fx03        WTT             stall until TIMER == 0
 ff04        PTT             pause TIMER
 ff05        RTT             resume TIMER
 
--- SOUND --
+-- sound --
 fx20        BUZ  Rx         play tone for Rx ticks
 
 OTHER
-labels can be defined in MercuryASM as 'label_name:'
-raw bytes can be defined in MercuryASM with the 'RAW' command
-constants can be defined with 'CON name value' and used anywhere a number is expected
-register aliases can be defined with 'ALI name Rx' and used anywhere a register is expected
+  labels can be defined in MercuryASM as 'label_name:'
+  raw bytes can be defined in MercuryASM with the 'RAW 0xABCD' command (it ALWAYS takes in ONE 16 bit integer)
+  constants can be defined with 'CON name value' and used anywhere a number is expected
+  register aliases can be defined with 'ALI name Rx' and used anywhere a register is expected
