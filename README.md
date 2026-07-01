@@ -4,18 +4,21 @@
 Mercury is a fantasy console loosely inspired by CHIP-8 and it's derivatives.
 
 ## Installation
-WIP
+You can install straight from GitHub.
+```sh
+pip install git+https://github.com/las-r/mercury.git
+```
 
 ## Usage
 ```sh
-# run emulator
-python -m mercury <program.bin>
+# Run emulator
+mercury <program.bin>
 
-# assemble source
-python -m mercury --asm <source.asm> <program.bin>
+# Assemble source
+mercury --asm <source.asm> <program.bin>
 
-# convert asset image to mercuryasm
-python -m mercury --conv <image.png> <output.asm>
+# Convert image to MercuryASM
+mercury --conv <image.png> <output.asm>
 ```
 
 ## Specification
